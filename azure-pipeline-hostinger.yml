@@ -1,0 +1,31 @@
+trigger:
+  branches:
+    include:
+      - vijay/design-and-implement
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  imageName: 'crm-frontend'
+  registry: 'registry.nafabarter.com'
+  fullImageName: '$(registry)/$(imageName)'
+  tag: '$(Build.BuildId)'
+
+steps:
+
+- task: Docker@2
+  displayName: 'Build and push $(imageName)'
+  inputs:
+    command: buildAndPush
+    containerRegistry: 'nafa-registry'
+    repository: '$(imageName)'
+    Dockerfile: 'Dockerfile'
+    tags: |
+      latest
+      $(tag)
+    
+- script: |
+    curl -X POST -k https://89.116.20.215:9443/api/stacks/webhooks/cd5cb9fd-abc1-47c7-b4bd-f40ae0d07637?IMAGE_TAG=$(Build.BuildId)
+  displayName: 'Trigger Portainer webhook'
+  condition: succeeded()
